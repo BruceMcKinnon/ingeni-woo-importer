@@ -1,19 +1,21 @@
 <?php
 
 
+require_once ('ingeni-woo-importer-class.php');
+
+$importer = new IngeniWooImporter();
+
 function ingeni_woo_importer_admin_init() {
-	// Register the jQuery date/time picker control
-	//wp_register_script( 'jquery.simple-dtpicker', plugins_url( 'jquery.simple-dtpicker.js', __FILE__ ) );
-	//wp_register_style('jquery-simple-dtpicker-css',  plugins_url( 'jquery.simple-dtpicker.css', __FILE__ ) );
-	
+
+	//
+	// Include the main importer class
+	//
 	ingeni_woo_importer_admin_scripts();
 	ingeni_woo_importer_plugin_options();
 }
 
 function ingeni_woo_importer_admin_scripts() {	
-	// Set up the jQuery date/time picker control
-	//wp_enqueue_script( 'jquery.simple-dtpicker' );
-	//wp_enqueue_style( 'jquery-simple-dtpicker-css' );
+
 }
 
 
@@ -22,13 +24,58 @@ function ingeni_woo_importer_admin_scripts() {
 add_action( 'wp_dashboard_setup', 'ingeni_woo_importer_dashboard_widgets' );
 function ingeni_woo_importer_dashboard_widgets() {
 	wp_add_dashboard_widget(
-                 'ingeni_woo_importer_admin_init',
-                 'Ingeni Woo Product Importer',
-                 'ingeni_woo_importer_admin_init'
-        );	
+		'ingeni_woo_importer_admin_init',
+		'Ingeni Woo Product Importer',
+		'ingeni_woo_importer_admin_init'
+	);	
 }
 
 
+//https://codex.wordpress.org/AJAX_in_Plugins
+//add_action( 'admin_footer', 'ingeni_woo_progress_javascript' ); // Write our JS below here
+function ingeni_woo_progress_javascript() { ?>
+	<script type="text/javascript" >
+	jQuery(document).ready(function($) {
+		setInterval(fetchIngeniWooProgress,5000);
+	});
+
+	function fetchIngeniWooProgress() {
+		var data = {
+			'action': 'ingeni_woo_progress',
+			'progress': 0
+		};
+
+		// since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
+		jQuery.post(ajaxurl, data, function(response) {
+			var info = response;
+			if (info) {
+				console.log(info);
+			}
+			jQuery('#ingeni_woo_importer_info').html(info);
+		});
+	}
+	</script>
+	<?php
+}
+
+
+//add_action( 'wp_ajax_ingeni_woo_progress', 'ingeni_woo_progress' );
+function ingeni_woo_progress() {
+
+	$my_progress = null;
+
+	try {
+		//$my_progress = IngeniWooImporter::getInstance()->get_import_progress();
+		//$my_progress = $importer->get_import_progress();
+//fb_log('progress is: '.$my_progress);
+	} catch (Exception $e) {
+    $my_progress = $e->getMessage();
+	}
+
+	wp_send_json($my_progress);
+
+	wp_die(); // this is required to terminate immediately and return a proper response
+}
 
 
 
@@ -37,18 +84,16 @@ function ingeni_woo_importer_dashboard_widgets() {
 
 // Display and save the exporter options panel
 function ingeni_woo_importer_plugin_options() {
+	global $importer;
+
 
 	$selected_file = "";
-
 
 	// Current user must be a Contributor at least.
 	if ( !current_user_can( 'edit_posts' ) )  {
 		wp_die( __( 'You don\'t have sufficient permissions to access this page.' ) );
 	}
 
-	if (class_exists('IngeniWooImporter')) {
-    $importer = new IngeniWooImporter();
-	}
 
 
 	if ( (isset($_POST['ingeni_woo_importer_edit_hidden'])) && ($_POST['ingeni_woo_importer_edit_hidden'] == 'Y') ){
@@ -56,21 +101,43 @@ function ingeni_woo_importer_plugin_options() {
 		
 		switch ($_REQUEST['btn_ingeni_woo_importer_submit']) {
 			case "Import Now":
-				$importer->local_debug_log('files: '.print_r($_FILES,true));
+				global $importer;
+				
+				fb_log('Import sta: '.date('his'));
+				//if ($importer) {
+					//unset($importer);
+				//}
+
+				$import_count = -1;
+				$date_start = new DateTime();
+
+				//$importer = IngeniWooImporter::getInstance();
+				
+				//fb_log('files: '.print_r($_FILES,true));
 				// Selected file
 				if ( $_FILES['btn_ingeniwoo_select']['name'] != '' ) {
-					$selected_file = $_FILES['btn_ingeniwoo_select']['file'];
-				}
+					$selected_file = $_FILES['btn_ingeniwoo_select']['name'];
+					$tmp_file = $_FILES['btn_ingeniwoo_select']['tmp_name'];
+					$size = $_FILES['btn_ingeniwoo_select']['size'];
 
-				
-				$import_count = $importer->IngeniRunWooImport();
-				
+					//$import_count = $importer->IngeniRunWooImport( $selected_file, $tmp_file, $size );
+					$import_count = $importer->IngeniRunWooImport( $selected_file, $tmp_file, $size );
+				}
+				$date_end = new DateTime();
+				$diffInSeconds = $date_end->getTimestamp() - $date_start->getTimestamp();
+
+
 				if ( $import_count >= 0 ) {
-					
-					echo('<div class="updated"><p><strong>'.$import_count.' rows imported...</strong></p></div>');
+					echo('<div class="updated"><p><strong>'.$import_count.' rows queued for background import in '.$diffInSeconds.' secs...</strong></p></div>');
+					fb_log('all done: '.$import_count);
 				} else {
 					echo('<div class="updated"><p><strong>'.$errMsg.'</strong></p></div>');		
 				}
+
+				//unset($importer);
+				//$importer = null;
+
+				
 			break;
 				
 			case "Save Settings":
@@ -103,6 +170,15 @@ function ingeni_woo_importer_plugin_options() {
 
 		echo('<tr valign="top">'); 
 		echo('<td>Select file:'.$selected_file.'</td>');
+		echo('</tr>'); 
+
+		// Progress bar holder
+		echo('<tr valign="top">'); 
+		echo('<td><div id="ingeni_woo_importer_progress" style="width:300px;border:5px solid #EBEDEF;"></div></td>');
+		echo('</tr>'); 
+		// Progress information
+		echo('<tr valign="top">'); 
+		echo('<td><div id="ingeni_woo_importer_info" style="width"></div></td>');
 		echo('</tr>'); 
 
 		echo('</tbody></table><br/>');

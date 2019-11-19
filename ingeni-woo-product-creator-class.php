@@ -3,18 +3,12 @@
 // IngeniWooProductCreator() - Class to create or modify a single Woo product
 //
 class IngeniWooProductCreator extends WP_Background_Process {
-
 	protected $action = 'ingeniwooimport';
-
-	//public function __construct( ) {
-		//$this->local_debug_log('IngeniWooProductCreator constructed');
-	//}
 
 	private $importOK = 0;
 
 	protected function task( $item ) {
-
-		//$this->local_debug_log('task: '.print_r($item,true));
+		$this->local_debug_log('task: '.print_r($item,true));
 
 		$product = $item[0];
 
@@ -25,6 +19,16 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		return false;
 	}
 
+
+	protected function complete() {
+		parent::complete();
+
+		if ( $this->is_queue_empty() ) {
+			// Email the report
+			$this->local_debug_log("time to email!!!");
+		}
+
+	}
 
 	//
 	// Clear out the WP_Async_Request data queue once it has been dispatched
@@ -110,11 +114,13 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									//$this->local_debug_log('attachid:'.$attachmentId);
 	
 									// insert and return attachment metadata
-									$attachmentData = wp_generate_attachment_metadata( $attachmentId, $imageFile);
-									//$this->local_debug_log('attachdata:'.print_r($attachmentData,true));
+									if ( function_exists("wp_generate_attachment_metadata") ) {
+										$attachmentData = wp_generate_attachment_metadata( $attachmentId, $imageFile);
+										//$this->local_debug_log('attachdata:'.print_r($attachmentData,true));
 
-									// update and return attachment metadata
-									wp_update_attachment_metadata( $attachmentId, $attachmentData );
+										// update and return attachment metadata
+										wp_update_attachment_metadata( $attachmentId, $attachmentData );
+									}
 							
 									// Save the attachment ID
 									array_push( $imageIds, $attachmentId );
@@ -170,7 +176,7 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 			set_time_limit(30); // Force the max execution timer to restart
 
-//$this->local_debug_log('working on: '.print_r($product,true));
+//$this->local_debug_log(' CreateWooProductworking on: '.print_r($product,true));
 			// Check if the product category exists
 			$prod_cat = 0;
 //$this->local_debug_log('cat: '.$product['category']);
@@ -193,6 +199,10 @@ class IngeniWooProductCreator extends WP_Background_Process {
 					}
 			} else {
 					$prod_cat = (int)$prod_cat_obj['term_id'];
+			}
+
+			if ( strlen(trim($product['excerpt'])) == 0 ) {
+				$product['excerpt'] = $this->get_first_sentence($product['description']);
 			}
 
 			if ( $prod_cat > 0 ) {
@@ -259,6 +269,12 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									if (array_key_exists('tags',$product)) {
 										if (strlen($product['tags']) > 0) {
 	//$this->local_debug_log('   tags: '.$product['tags']);
+												if ( substr($product['tags'],0,1) == ',' ) {
+													$product['tags'] = substr($product['tags'],1,(strlen($product['tags'])-1));
+												}
+												if ( substr($product['tags'],(strlen($product['tags'])-1),1) == ',' ) {
+													$product['tags'] = substr($product['tags'],0,strlen($product['tags'])-1);
+												}
 												wp_set_object_terms($post_id, explode(',',$product['tags']), 'product_tag');
 										}
 									}
@@ -301,8 +317,7 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									$this->update_woo_meta( $post_id, '_height', 'height', $product );
 									$this->update_woo_meta( $post_id, '_stock', 'stock', $product );
 									$this->update_woo_meta( $post_id, '_price', 'price', $product );
-									$this->update_woo_meta( $post_id, '_price', 'price', $product );
-									$this->update_woo_meta( $post_id, '_sale_price', 'price', $product );
+									$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );
 
 									update_post_meta( $post_id, '_sku', $product['sku'] );
 									update_post_meta( $post_id, '_product_attributes', array());
@@ -344,7 +359,7 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		}
 
 		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
-
+//$this->local_debug_log('key:'.$key);
 		$count = $wpdb->get_var( $wpdb->prepare( "
 		SELECT COUNT(*)
 		FROM {$table}

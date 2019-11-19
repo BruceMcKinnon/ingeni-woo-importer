@@ -115,11 +115,13 @@ class IngeniWooImporter {
             $importCount = 0;
             $this->progress = 0;
             
-
+            $ingeni_woo_skip_first_line = get_option('ingeni_woo_skip_first_line');
+            $ingeni_woo_report_email = get_option('ingeni_woo_report_email');
+        
             $maxImport = 0;
 
             //Jump over the header
-            $offset = 1;
+            $offset = $ingeni_woo_skip_first_line ;
             if ($offset> 0) {
                 $currRow = fgetcsv($fileHandle);
                 unset($currRow);
@@ -134,7 +136,7 @@ class IngeniWooImporter {
                         fseek($fileHandle,0,SEEK_END);
                         $this->local_debug_log('out of here!');
                     }
-                    //$this->local_debug_log(print_r($currRow,true));
+//$this->local_debug_log(print_r($currRow,true));
 
                     $row_idx++;
 
@@ -153,7 +155,7 @@ class IngeniWooImporter {
                         }
                     }
 
-
+//$this->local_debug_log('parsed prod: '.print_r($product,true));
                     // Now import it
 
                     if ( strlen($product['sku']) > 0 ) {

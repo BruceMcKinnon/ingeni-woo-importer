@@ -1,0 +1,18 @@
+
+
+.woo-importer {
+	overflow: hidden;
+	max-width: 600px;
+	width: 100%;
+	display: block;
+}
+
+.woo-importer tbody,
+.woo-importer tr {
+	overflow:hidden;
+	display: block;
+}
+
+.woo-importer td {
+	max-width: 50%;
+}

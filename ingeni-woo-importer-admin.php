@@ -1,11 +1,13 @@
 <?php
 
+include_once( ABSPATH . 'wp-admin/includes/image.php' );
 
 require_once ('ingeni-woo-importer-class.php');
 
 $importer = new IngeniWooImporter();
 
 function ingeni_woo_importer_admin_init() {
+
 
 	//
 	// Include the main importer class
@@ -17,6 +19,7 @@ function ingeni_woo_importer_admin_init() {
 function ingeni_woo_importer_admin_scripts() {	
 
 }
+
 
 
 
@@ -102,25 +105,17 @@ function ingeni_woo_importer_plugin_options() {
 		switch ($_REQUEST['btn_ingeni_woo_importer_submit']) {
 			case "Import Now":
 				global $importer;
-				
-				fb_log('Import sta: '.date('his'));
-				//if ($importer) {
-					//unset($importer);
-				//}
 
 				$import_count = -1;
 				$date_start = new DateTime();
 
-				//$importer = IngeniWooImporter::getInstance();
-				
-				//fb_log('files: '.print_r($_FILES,true));
+
 				// Selected file
 				if ( $_FILES['btn_ingeniwoo_select']['name'] != '' ) {
 					$selected_file = $_FILES['btn_ingeniwoo_select']['name'];
 					$tmp_file = $_FILES['btn_ingeniwoo_select']['tmp_name'];
 					$size = $_FILES['btn_ingeniwoo_select']['size'];
 
-					//$import_count = $importer->IngeniRunWooImport( $selected_file, $tmp_file, $size );
 					$import_count = $importer->IngeniRunWooImport( $selected_file, $tmp_file, $size );
 				}
 				$date_end = new DateTime();
@@ -133,17 +128,16 @@ function ingeni_woo_importer_plugin_options() {
 				} else {
 					echo('<div class="updated"><p><strong>'.$errMsg.'</strong></p></div>');		
 				}
-
-				//unset($importer);
-				//$importer = null;
-
 				
 			break;
 				
 			case "Save Settings":
 				//update_option('pfc_packing_slips_max_rows', $_POST['options_max_rows']);
-				
+				update_option('ingeni_woo_skip_first_line', isset($_POST['ingeni_woo_skip_first_line'] ));
+				update_option('ingeni_woo_report_email', $_POST['ingeni_woo_report_email'] );
+
 				echo('<div class="updated"><p>Settings saved...</p></div>');
+
 			break;
 			
 			case "Clear Multis";
@@ -151,18 +145,17 @@ function ingeni_woo_importer_plugin_options() {
 				echo('<div class="updated"><p>Cleared '.$clear_count.'</p></div>');
 			break;
 		}
-
 	}
 
-
-
+	$ingeni_woo_skip_first_line = get_option('ingeni_woo_skip_first_line');
+	$ingeni_woo_report_email = get_option('ingeni_woo_report_email');
 
 
 	echo('<div class="wrap">');
 		echo('<form action="" method="post" enctype="multipart/form-data">'); 
 		echo('<input type="hidden" name="ingeni_woo_importer_edit_hidden" value="Y">');
 
-		echo('<table class="form-table"><tbody>');
+		echo('<table class="form-table woo-importer"><tbody>');
 
 		echo('<tr valign="top">'); 
 		echo('<td><input type="file" name="btn_ingeniwoo_select" value="Select"></td>');
@@ -171,6 +164,16 @@ function ingeni_woo_importer_plugin_options() {
 		echo('<tr valign="top">'); 
 		echo('<td>Select file:'.$selected_file.'</td>');
 		echo('</tr>'); 
+
+		$checked_value = '';
+		if ($ingeni_woo_skip_first_line) {
+			$checked_value = ' checked'; 
+		}
+		echo('<tr valign="top"><td><input type="checkbox" id="ingeni_woo_skip_first_line" name="ingeni_woo_skip_first_line" '.$checked_value.' />Skip first line</td></tr>');  
+
+		echo('<tr valign="top"><td>Email reports to:</td><td><input id="ingeni_woo_report_email" maxlength="250" size="30" name="ingeni_woo_report_email" value="'.$ingeni_woo_report_email.'" type="text" /></td></tr>');  
+
+
 
 		// Progress bar holder
 		echo('<tr valign="top">'); 

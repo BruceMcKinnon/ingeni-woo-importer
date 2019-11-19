@@ -33,5 +33,5 @@ console.log('refresh now:' + n);
     // Trigger the process in web server.
     jQuery.ajax({url: "process.php"});
     // Refresh the progress bar every 1 second.
-    timer = window.setInterval(refreshProgress, 1000);
+    timer = window.setInterval(refreshProgress, 5000);
   });

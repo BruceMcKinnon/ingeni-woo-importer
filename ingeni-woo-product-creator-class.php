@@ -317,6 +317,7 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									$this->update_woo_meta( $post_id, '_height', 'height', $product );
 									$this->update_woo_meta( $post_id, '_stock', 'stock', $product );
 									$this->update_woo_meta( $post_id, '_price', 'price', $product );
+									$this->update_woo_meta( $post_id, '_regular_price', 'price', $product );
 									$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );
 
 									update_post_meta( $post_id, '_sku', $product['sku'] );

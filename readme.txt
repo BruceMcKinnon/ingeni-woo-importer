@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: woocommerce
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2020.01
+Stable tag: 2020.02
 
 Allows Woocommerce products to be created or updated from a CSV. Uses a CSV schema file to map feilds supplied in the import CSV to WooCommerce product fields. 
 
@@ -50,3 +50,5 @@ v2019.02 - Implements background batch processing for really large imports
 v2019.03 - Added UI controls
 
 v2020.01 - Added make_unmodified_draft() to IngeniWooProductCreator
+
+v2020.02 - Updater code was called by the wrong hook. Must be by init().

@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.01
+Version: 2020.02
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -33,6 +33,8 @@ v2019.01 - Updated to allow multiple 'tags' columns.
 v2019.02 - Implements background batch processing for really large imports
 v2019.03 - Added UI controls
 v2020.01 - Added make_unmodified_draft() to IngeniWooProductCreator
+v2020.02 - Updater code was called by the wrong hook. Must be by init().
+				 - Updated uperdater clode to v4.9
 */
 
 
@@ -49,7 +51,7 @@ function ingeni_woo_importer_extender() {
 
 	
 }
-add_action( 'wp_enqueue_scripts', 'ingeni_woo_importer_extender' );
+add_action( 'init', 'ingeni_woo_importer_extender' );
 
 
 // Register CSS for the plugin

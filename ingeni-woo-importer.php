@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2019.03
+Version: 2020.01
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -32,6 +32,7 @@ v2018.01 - Initial release
 v2019.01 - Updated to allow multiple 'tags' columns.
 v2019.02 - Implements background batch processing for really large imports
 v2019.03 - Added UI controls
+v2020.01 - Added make_unmodified_draft() to IngeniWooProductCreator
 */
 
 

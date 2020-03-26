@@ -24,11 +24,29 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		parent::complete();
 
 		if ( $this->is_queue_empty() ) {
+			// Mae draft anything that was not modified in the last hour
+			$this->make_unmodified_draft();
+
 			// Email the report
 			$this->local_debug_log("time to email!!!");
 		}
 
 	}
+
+
+	private function make_unmodified_draft( ) {
+		global $wpdb;
+
+		$one_hour_ago = date("Y-m-d H:i:s", strtotime("-1 hour") );
+
+		$table = $wpdb->prefix.'posts';
+		$update_sql = 'UPDATE ' . $table .' SET post_status = "draft" WHERE (post_type = "product") AND(post_status = "publish") AND (post_modified < "'.$one_hour_ago.'")';
+		$this->local_debug_log($update_sql);
+		$wpdb->query($update_sql);
+}
+
+
+
 
 	//
 	// Clear out the WP_Async_Request data queue once it has been dispatched

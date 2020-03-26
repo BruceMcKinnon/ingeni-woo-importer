@@ -68,8 +68,6 @@ class IngeniWooImporter {
     }	
 
 
-
-
     public function IngeniRunWooImport( $importFile, $tmpFile, $fileSize ) {
         try {
 

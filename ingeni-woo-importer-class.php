@@ -12,13 +12,10 @@ class IngeniWooImporter {
     /*
     private function __construct() {}
     private function __clone() {}
-
     public static function getInstance() {
         if (!IngeniWooImporter::$instance instanceof self) {
             IngeniWooImporter::$instance = new self();
-
             $this->background_import = New IngeniWooProductCreator();
-
         }
         return IngeniWooImporter::$instance;
     }
@@ -105,6 +102,8 @@ class IngeniWooImporter {
             // Now grab the schema
             //
             $schema_line = file( __DIR__ . '/import-schema.csv');
+            // Convert to UTF-8
+            $schema_line = mb_convert_encoding($schema_line, "UTF-8", "auto");
 //$this->local_debug_log('schema line: '.print_r($schema_line,true));
             $schema = explode(',',$schema_line[0]);
 //$this->local_debug_log('exploded: '.print_r($schema,true));
@@ -130,6 +129,7 @@ class IngeniWooImporter {
                 set_time_limit(30);
 
                 if ( ($currRow = fgetcsv($fileHandle)) !== FALSE ) {
+                    $currRow = mb_convert_encoding($currRow, "UTF-8", "auto");
                     if ( ($currRow[0] == "")||($currRow[0] == NULL) ) {
                         fseek($fileHandle,0,SEEK_END);
                         $this->local_debug_log('out of here!');
@@ -152,13 +152,15 @@ class IngeniWooImporter {
                             }
                         }
                     }
-
-//$this->local_debug_log('parsed prod: '.print_r($product,true));
+                    
+//$this->local_debug_log('parsed prod: '.strlen($product['sku']).'|'.strlen($product['title']));
+//var_dump($product);
                     // Now import it
 
                     if ( strlen($product['sku']) > 0 ) {
                         $this->background_import->push_to_queue( array($product, $zip_path) );
                         $importCount += 1;
+//$this->local_debug_log('push_to_queue: ['.$importCount.'] '.$product['sku'].' | '.$zip_path);
                     }
                     unset($product);
                 }

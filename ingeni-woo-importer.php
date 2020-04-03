@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.02
+Version: 2020.05
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -35,6 +35,11 @@ v2019.03 - Added UI controls
 v2020.01 - Added make_unmodified_draft() to IngeniWooProductCreator
 v2020.02 - Updater code was called by the wrong hook. Must be by init().
 				 - Updated uperdater clode to v4.9
+v2020.03 - IngeniWooImporter() - Now converts both the schema.csv and the import file into UTF8 encoding.
+				 - IngeniWooProductCreator() - If updating an expisting product, make sure it is set to Publish (in case it was previous a Draft).
+v2020.04 - IngeniWooProductCreator() - When updating or creating a product, force the _sale_price meta to be cleared before it is optionally re-written.
+v2020.05 - IngeniWooProductCreator() - Use Woo Product class to set prices for regular and sale prices
+				 
 */
 
 

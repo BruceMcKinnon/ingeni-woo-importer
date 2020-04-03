@@ -7,8 +7,8 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 	private $importOK = 0;
 
-	protected function task( $item ) {
-		$this->local_debug_log('task: '.print_r($item,true));
+	protected function task( $item ) { 
+		//$this->local_debug_log('task: '.print_r($item,true));
 
 		$product = $item[0];
 
@@ -29,6 +29,8 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 			// Email the report
 			$this->local_debug_log("time to email!!!");
+		} else {
+			$this->local_debug_log("queue was not processed!!!!");
 		}
 
 	}
@@ -41,7 +43,7 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 		$table = $wpdb->prefix.'posts';
 		$update_sql = 'UPDATE ' . $table .' SET post_status = "draft" WHERE (post_type = "product") AND(post_status = "publish") AND (post_modified < "'.$one_hour_ago.'")';
-		$this->local_debug_log($update_sql);
+		//$this->local_debug_log($update_sql);
 		$wpdb->query($update_sql);
 }
 
@@ -253,12 +255,13 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									$this->local_debug_log('CreateWooProduct A: '.$e->message);
 							}
 					} else {
-							// Update the existing product
+							// Update the existing product - make sure it is published again
 							$existing_prod = array(
 									'ID'           => $post_id,
 									'post_title'   => $product['title'],
 									'post_content' => $product['description'],
 									'post_excerpt' => $this->get_first_sentence($product['description']),
+									'post_status' => "publish",
 							);
 
 							// Update the post into the database
@@ -313,10 +316,10 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									}
 //$this->local_debug_log('stock_status: '.$stock_status);
 //$this->local_debug_log('manage stock: '.strtolower($product['manage_stock']));
-									$manage_stock = "no";
+									$manage_stock = "yes";
 									if (array_key_exists('manage_stock',$product)) {
-										if ( (strtolower($product['manage_stock']) == 'y') || (strtolower($product['manage_stock']) == 'yes') ) {
-											$manage_stock  = 'yes';
+										if ( (strtolower($product['manage_stock']) == 'n') || (strtolower($product['manage_stock']) == 'no') ) {
+											$manage_stock  = 'no';
 										}
 									}
 
@@ -328,15 +331,31 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									update_post_meta( $post_id, '_purchase_note', "" );
 									update_post_meta( $post_id, '_featured', "no" );
 									update_post_meta( $post_id, '_manage_stock', $manage_stock );
+									// Force sale price to be cleared
+									update_post_meta( $post_id, '_sale_price', "" );
+
 
 									$this->update_woo_meta( $post_id, '_weight', 'weight', $product );
 									$this->update_woo_meta( $post_id, '_length', 'length', $product );
 									$this->update_woo_meta( $post_id, '_width', 'width', $product );
 									$this->update_woo_meta( $post_id, '_height', 'height', $product );
 									$this->update_woo_meta( $post_id, '_stock', 'stock', $product );
-									$this->update_woo_meta( $post_id, '_price', 'price', $product );
-									$this->update_woo_meta( $post_id, '_regular_price', 'price', $product );
-									$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );
+
+									//$this->update_woo_meta( $post_id, '_regular_price', 'price', $product );
+									//$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );
+
+									// The price field is the price actually shown to the customer
+									$this_product = new WC_Product( $post_id );
+									if ( array_key_exists('sale_price',$product) ) {
+										$this_product->set_sale_price( $product['sale_price'] );
+									}
+									$this_product->set_price( $product['price'] );
+									$this_product->save();
+
+/*									if (stripos($product['title'],"6th gear") !== false) {
+										$this->local_debug_log(print_r($this_product,true));
+									}
+*/
 
 									update_post_meta( $post_id, '_sku', $product['sku'] );
 									update_post_meta( $post_id, '_product_attributes', array());
@@ -344,8 +363,6 @@ class IngeniWooProductCreator extends WP_Background_Process {
 									update_post_meta( $post_id, '_sale_price_dates_to', "" );
 									update_post_meta( $post_id, '_sold_individually', "" );
 									update_post_meta( $post_id, '_backorders', "no" );
-
-
 
 							} catch (Exception $e) {
 									$this->local_debug_log('CreateWooProduct Z: '.$e->message);
@@ -360,6 +377,11 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 	private function update_woo_meta( $post_id, $name, $item, &$product_array ) {
 		if (array_key_exists($item,$product_array)) {
+/*			
+if (stripos($name,'_price') !== false) {
+	$this->local_debug_log($post_id.'|'.$name.'|'.$product_array[$item]);
+}
+*/
 			update_post_meta( $post_id, $name, $product_array[$item] );
 		}
 	}

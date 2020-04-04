@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: woocommerce
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2020.02
+Stable tag: 2020.06
 
 Allows Woocommerce products to be created or updated from a CSV. Uses a CSV schema file to map feilds supplied in the import CSV to WooCommerce product fields. 
 
@@ -52,3 +52,13 @@ v2019.03 - Added UI controls
 v2020.01 - Added make_unmodified_draft() to IngeniWooProductCreator
 
 v2020.02 - Updater code was called by the wrong hook. Must be by init().
+- Updated uperdater clode to v4.9
+
+v2020.03 - IngeniWooImporter() - Now converts both the schema.csv and the import file into UTF8 encoding.
+- IngeniWooProductCreator() - If updating an expisting product, make sure it is set to Publish (in case it was previous a Draft).
+
+v2020.04 - IngeniWooProductCreator() - When updating or creating a product, force the _sale_price meta to be cleared before it is optionally re-written.
+
+v2020.05 - IngeniWooProductCreator() - Use Woo Product class to set prices for regular and sale prices
+
+v2020.06 - IngeniWooProductCreator() - Extra error trapping

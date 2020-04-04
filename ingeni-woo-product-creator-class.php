@@ -196,7 +196,9 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 			set_time_limit(30); // Force the max execution timer to restart
 
-//$this->local_debug_log(' CreateWooProductworking on: '.print_r($product,true));
+//$this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],true));
+
+		try {
 			// Check if the product category exists
 			$prod_cat = 0;
 //$this->local_debug_log('cat: '.$product['category']);
@@ -371,7 +373,9 @@ class IngeniWooProductCreator extends WP_Background_Process {
 			} else {
 					$this->local_debug_log('CreateWooProduct: Could not obtain Category ID!');
 			}
-
+		} catch (Exception $e) {
+			$this->local_debug_log('CreateWooProduct ERR: '.$e->message);
+		}
 			return $post_id;
 	}
 

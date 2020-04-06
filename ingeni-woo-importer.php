@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.06
+Version: 2020.07
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -40,6 +40,7 @@ v2020.03 - IngeniWooImporter() - Now converts both the schema.csv and the import
 v2020.04 - IngeniWooProductCreator() - When updating or creating a product, force the _sale_price meta to be cleared before it is optionally re-written.
 v2020.05 - IngeniWooProductCreator() - Use Woo Product class to set prices for regular and sale prices
 v2020.06 - IngeniWooProductCreator() - Extra error trapping
+v2020.07 - IngeniWooProductCreator() - Re-factored to utilise WC_Product in place of direct post_meta updates.
 				 
 */
 

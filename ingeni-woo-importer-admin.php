@@ -109,6 +109,10 @@ function ingeni_woo_importer_plugin_options() {
 				$import_count = -1;
 				$date_start = new DateTime();
 
+				// Set the start time
+				date_default_timezone_set("Australia/Sydney"); 
+				update_option('ingeni_woo_import_start', date('Y-m-d H:i:s') );
+
 
 				// Selected file
 				if ( $_FILES['btn_ingeniwoo_select']['name'] != '' ) {

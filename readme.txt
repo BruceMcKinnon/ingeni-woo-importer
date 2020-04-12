@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: woocommerce
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2020.07
+Stable tag: 2020.10
 
 Allows Woocommerce products to be created or updated from a CSV. Uses a CSV schema file to map feilds supplied in the import CSV to WooCommerce product fields. 
 
@@ -64,3 +64,14 @@ v2020.05 - IngeniWooProductCreator() - Use Woo Product class to set prices for r
 v2020.06 - IngeniWooProductCreator() - Extra error trapping
 
 v2020.07 - IngeniWooProductCreator() - Re-factored to utilise WC_Product in place of direct post_meta updates.
+
+v2020.08 - Now support the custom Woo fields for Brand and MPN - supported for SEO markup by Ingeni Woo Product Meta plugin
+				 
+v2020.09 - wp-background-process() - Extra error debugging and error trapping.
+- CreateWooProduct() - Auto 'out-of-stock' products that have sale price > than the regular price
+- IngeniRunWooImport() - Decrease batch sizes to 10 products each. Increase timeouts.
+
+
+v2020.10 - Now ensures all text is imported as UTF-8.
+- UTF-8 chars will cause problems with DB columns that only support UTF-7, but have improved error handling to ensure the import process continues.
+- Background batch sizes restored to 20 products per batch

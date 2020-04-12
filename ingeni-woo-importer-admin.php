@@ -139,6 +139,7 @@ function ingeni_woo_importer_plugin_options() {
 				//update_option('pfc_packing_slips_max_rows', $_POST['options_max_rows']);
 				update_option('ingeni_woo_skip_first_line', isset($_POST['ingeni_woo_skip_first_line'] ));
 				update_option('ingeni_woo_report_email', $_POST['ingeni_woo_report_email'] );
+				update_option('ingeni_woo_default_brand', $_POST['ingeni_woo_default_brand'] );
 
 				echo('<div class="updated"><p>Settings saved...</p></div>');
 
@@ -153,7 +154,7 @@ function ingeni_woo_importer_plugin_options() {
 
 	$ingeni_woo_skip_first_line = get_option('ingeni_woo_skip_first_line');
 	$ingeni_woo_report_email = get_option('ingeni_woo_report_email');
-
+	$ingeni_woo_default_brand = get_option('ingeni_woo_default_brand');
 
 	echo('<div class="wrap">');
 		echo('<form action="" method="post" enctype="multipart/form-data">'); 
@@ -177,6 +178,7 @@ function ingeni_woo_importer_plugin_options() {
 
 		echo('<tr valign="top"><td>Email reports to:</td><td><input id="ingeni_woo_report_email" maxlength="250" size="30" name="ingeni_woo_report_email" value="'.$ingeni_woo_report_email.'" type="text" /></td></tr>');  
 
+		echo('<tr valign="top"><td>Default Product Brand:</td><td><input id="ingeni_woo_default_brand" maxlength="250" size="30" name="ingeni_woo_default_brand" value="'.$ingeni_woo_default_brand.'" type="text" /></td></tr>');  
 
 
 		// Progress bar holder

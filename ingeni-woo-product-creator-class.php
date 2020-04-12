@@ -7,6 +7,18 @@ class IngeniWooProductCreator extends WP_Background_Process {
 
 	private $importOK = 0;
 
+	private $discount_schedule = null;
+
+
+	public function __construct() {
+		parent::__construct();
+
+		// Load the schedule of discounts
+		$this->discount_schedule = $this->load_discount_schedule();
+	}
+
+
+
 	protected function task( $item ) { 
 		//$this->local_debug_log('task: '.print_r($item,true));
 
@@ -32,17 +44,32 @@ class IngeniWooProductCreator extends WP_Background_Process {
 			// Email the report
 			$msg = 'All done and complete.';
 		} else {
-			$msg = 'queue was not processed!!!!';
+			$msg = 'ERROR: Queue was not processed!!!!';
 		}
 		$this->local_debug_log($msg);
 
 		// Email the report
 		$ingeni_woo_report_email = get_option('ingeni_woo_report_email');
-		wp_mail($ingeni_woo_report_email,'Ingeni Woo Import',$msg);
+
+		$outFile = $this->get_local_debug_log_filename();
+		if ( !file_exists($outFile) ) {
+			$outFile = '';
+		}
+
+		// Set Mail Headers
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type: text/html; charset=" . get_bloginfo('charset') . "" . "\r\n";
+		// Send the email
+		if ( wp_mail($ingeni_woo_report_email,'Ingeni Woo Import',$msg, $headers, $outFile) ) {
+			if ( file_exists($outFile) ) {
+				//unlink($outFile);
+				$new_outfile = str_ireplace(".txt",date("Y-m-d-H-i-s").".txt",$outFile);
+				rename( $outFile, $new_outfile );
+			}
+		}
 
 		// Clear the start time
 		update_option('ingeni_woo_import_start', '' );
-
 	}
 
 
@@ -50,13 +77,16 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		global $wpdb;
 
 		date_default_timezone_set("Australia/Sydney"); 
-		$one_hour_ago = date("Y-m-d H:i:s", strtotime("-1 hour") );
+		$one_week_ago = date("Y-m-d H:i:s", strtotime("-1 week") );
+		$one_day_ago = date("Y-m-d H:i:s", strtotime("-1 day") );
 		// Get the start time
-		$start_time = get_option('ingeni_woo_import_start', $one_hour_ago );
+		//$start_time = get_option('ingeni_woo_import_start', $one_week_ago );
+		//$start_time = $one_week_ago;
+		$start_time = $one_day_ago;
 
 		$table = $wpdb->prefix.'posts';
 		$update_sql = 'UPDATE ' . $table .' SET post_status = "draft" WHERE (post_type = "product") AND(post_status = "publish") AND (post_modified < "'.$start_time.'")';
-$this->local_debug_log($update_sql);
+//$this->local_debug_log($update_sql);
 		$wpdb->query($update_sql);
 
 }
@@ -83,24 +113,32 @@ $this->local_debug_log($update_sql);
 		return $local_install;
 	}
 
-	private function local_debug_log($msg) {
-			$upload_dir = wp_upload_dir();
-			$outFile = $upload_dir['basedir'];
-			if ( $this->is_local() ) {
-					$outFile .= '\\';
-			} else {
-					$outFile .= '/';
-			}
-			$outFile .= basename(__DIR__).'.txt';
-			
-			date_default_timezone_set(get_option('timezone_string'));
 
-			// Now write out to the file
-			$log_handle = fopen($outFile, "a");
-			if ($log_handle !== false) {
-					fwrite($log_handle, date("Y-m-d H:i:s").": ".$msg."\r\n");
-					fclose($log_handle);
-			}
+	private function get_local_debug_log_filename() {
+		$upload_dir = wp_upload_dir();
+		$outFile = $upload_dir['basedir'];
+		if ( $this->is_local() ) {
+				$outFile .= '\\';
+		} else {
+				$outFile .= '/';
+		}
+		$outFile .= basename(__DIR__).'.txt';
+
+		return $outFile;
+	}
+
+
+	private function local_debug_log($msg) {
+		$outFile = $this->get_local_debug_log_filename();
+			
+		date_default_timezone_set(get_option('timezone_string'));
+
+		// Now write out to the file
+		$log_handle = fopen($outFile, "a");
+		if ($log_handle !== false) {
+				fwrite($log_handle, date("Y-m-d H:i:s").": ".$msg."\r\n");
+				fclose($log_handle);
+		}
 	}	
 
 	private function get_product_by_sku( $sku ) {
@@ -205,12 +243,66 @@ $this->local_debug_log($update_sql);
 		return $retVal;
 	}
 
+
+	private function load_discount_schedule() {
+		$discount_schedule = array();
+
+		try {
+			$discount_filename = __DIR__ . '/discount_schedule.csv';
+			if ( file_exists( $discount_filename ) ) {
+				$schema_line = file( __DIR__ . '/discount_schedule.csv');
+
+				$discountHandle = fopen($discount_filename, "r");
+				if ($discountHandle === FALSE) {
+						throw new Exception("Error opening ".$discount_filename);
+				}
+				while( !feof($discountHandle) ) {
+					if ( ($currRow = fgetcsv($discountHandle)) !== FALSE ) {
+
+							// Add the current line onto the end of the discount schedule array
+							if ( count($currRow, COUNT_RECURSIVE) == 2 ) {
+								$discount_schedule[mb_convert_encoding($currRow[0], "UTF-8", "auto")] = mb_convert_encoding($currRow[1], "UTF-8", "auto");
+							}
+					}
+				}
+
+				//Close the file
+				fclose($discountHandle);
+			}
+
+		} catch (Exception $e) {
+			$this->local_debug_log('load_discount_schedule: '.$e->getMessage());
+		}
+
+		return $discount_schedule;
+	}
+
+
+	private function lookup_discount_percentage( $discount_class ) {
+		$discount_percentage = null;
+
+		try {
+			// Does the discount class exist in the discount table?
+			if ( array_key_exists( $discount_class, $this->discount_schedule) ) {
+				$discount_percentage = $this->discount_schedule[$discount_class];
+			}
+
+		} catch (Exception $e) {
+			$this->local_debug_log('lookup_discount_percentage: '.$e->getMessage());
+		}
+//$this->local_debug_log('  disc_class:' . $discount_class . ' = ' . $discount_percentage);
+		return $discount_percentage;
+	}
+
+
+
 	private function CreateWooProduct( $product, $zip_path ) {
 			$post_id = 0;
 
 			set_time_limit(30); // Force the max execution timer to restart
 
-$this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],true));
+$this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],true));
+
 
 		try {
 			// Check if the product category exists
@@ -242,6 +334,7 @@ $this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],t
 			}
 
 			if ( $prod_cat > 0 ) {
+					$post_status = "publish";
 
 					$post_id = $this->get_product_by_sku($product['sku']);
 //$this->local_debug_log($product['sku'].' post id: '.$post_id);
@@ -251,11 +344,11 @@ $this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],t
 									$post = array(
 											'post_author' => $user_id,
 											'post_content' => $product['description'],
-											'post_status' => "publish",
+											'post_status' => $post_status,
 											'post_title' => $product['title'],
 											'post_parent' => '',
 											'post_type' => "product",
-											'post_excerpt' => $this->get_first_sentence($product['description']),
+											'post_excerpt' => $product['excerpt'],
 									);
 
 									//Create post
@@ -276,8 +369,8 @@ $this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],t
 									'ID'           => $post_id,
 									'post_title'   => $product['title'],
 									'post_content' => $product['description'],
-									'post_excerpt' => $this->get_first_sentence($product['description']),
-									'post_status' => "publish",
+									'post_excerpt' => $product['excerpt'],
+									'post_status' => $post_status,
 							);
 
 							// Update the post into the database
@@ -341,22 +434,44 @@ $this->local_debug_log(' CreateWooProductworking on: '.print_r($product['sku'],t
 
 
 									$this_product = new WC_Product( $post_id );
+//$this->local_debug_log('  prod:' . print_r($product,true) );	
+									$sale_price = '';
+									if ( array_key_exists('discount_class',$product) ) {
+										$discount_percent = $this->lookup_discount_percentage( $product['discount_class'] );
+
+										if ( is_numeric($discount_percent) ) {
+											// Do a straight calculation
+											$discount_amount = $product['price'] * ( $discount_percent / 100 );
+											$sale_price = $product['price'] - $discount_amount;
+//$this->local_debug_log('  disc_percent:' . $discount_percent . '  disc_amount:'.$discount_amount );											
+
+										} else {
+											// Lookup another field in the product to obtain the sale price
+											// The price field is the price actually shown to the customer
+											if ( array_key_exists($discount_percent,$product) ) {
+												$sale_price = $product[ $discount_percent ];
+//$this->local_debug_log('  disc_col:' . $discount_percent );	
+											}
+										}
+									}
 									
 									// The price field is the price actually shown to the customer
-									if ( array_key_exists('sale_price',$product) ) {
-										$this_product->set_sale_price( $product['sale_price'] );
-									
-$this->local_debug_log('  set sale price: ' . $product['sale_price']);
-									} else {
-										$this_product->set_sale_price( '' );
-$this->local_debug_log('  clear sale price');
-									}
+									$this_product->set_sale_price( $sale_price );
+//$this->local_debug_log('  set sale price: ' . $product['sale_price']);
+
 									$this_product->set_price( $product['price'] );
 									$this_product->set_regular_price( $product['price'] );
-$this->local_debug_log('  set price: ' . $product['price']);
+//$this->local_debug_log('  set price: ' . $product['price']);
 
 									//$this->update_woo_meta( $post_id, '_regular_price', 'price', $product );
 									//$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );
+
+									// If the sale price is more than the regular price, 'make it out of stock'
+									if ( is_numeric($sale_price) ) {
+										if ( ( $sale_price > $product['price'] ) || ( $product['price'] < 0.10 ) ) {
+											$stock_status = 'outofstock';
+										}
+									}
 
 
 									$this_product->set_catalog_visibility( 'visible' );
@@ -368,18 +483,6 @@ $this->local_debug_log('  set price: ' . $product['price']);
 									$this_product->set_purchase_note( '' );
 									$this_product->set_featured( 'no' );
 									$this_product->set_manage_stock( $manage_stock );
-									/*
-									update_post_meta( $post_id, '_visibility', 'visible' );
-									update_post_meta( $post_id, '_stock_status', $stock_status);
-									update_post_meta( $post_id, 'total_sales', '0');
-									update_post_meta( $post_id, '_downloadable', 'no');
-									update_post_meta( $post_id, '_virtual', 'no');
-									update_post_meta( $post_id, '_purchase_note', "" );
-									update_post_meta( $post_id, '_featured', "no" );
-									update_post_meta( $post_id, '_manage_stock', $manage_stock );
-									// Force sale price to be cleared
-									update_post_meta( $post_id, '_sale_price', "" );
-									*/
 
 
 									$this_product->set_sku( $product['sku'] );
@@ -388,14 +491,6 @@ $this->local_debug_log('  set price: ' . $product['price']);
 									$this_product->set_date_on_sale_to( '' );
 									$this_product->set_sold_individually( '' );
 									$this_product->set_backorders( 'no' );
-/*
-									update_post_meta( $post_id, '_sku', $product['sku'] );
-									update_post_meta( $post_id, '_product_attributes', array());
-									update_post_meta( $post_id, '_sale_price_dates_from', "" );
-									update_post_meta( $post_id, '_sale_price_dates_to', "" );
-									update_post_meta( $post_id, '_sold_individually', "" );
-									update_post_meta( $post_id, '_backorders', "no" );
-*/
 
 
 									if (array_key_exists('weight', $product)) {
@@ -414,18 +509,20 @@ $this->local_debug_log('  set price: ' . $product['price']);
 										$this_product->set_stock_quantity( floatval($product['stock']) );
 									}
 
-/*
-									$this->update_woo_meta( $post_id, '_weight', 'weight', $product );
-									$this->update_woo_meta( $post_id, '_length', 'length', $product );
-									$this->update_woo_meta( $post_id, '_width', 'width', $product );
-									$this->update_woo_meta( $post_id, '_height', 'height', $product );
-									$this->update_woo_meta( $post_id, '_stock', 'stock', $product );
-*/
 
-									
+									// Set the product brand name and MPN field, if provided.
+									// These fields are custom fields used by the Ingeni Woo Product Meta plugin
+									if ( array_key_exists('brand', $product) ) {
+										update_post_meta( $post_id, '_ingeni_woo_product_brand_field', $product['brand'] );
+									}
+									if ( array_key_exists('mpn', $product) ) {
+										update_post_meta( $post_id, '_ingeni_woo_product_mpn_field', $product['mpn'] );
+									}									
+
 									$this_product->set_date_modified( date('Y-m-d H:i:s') );
 
 									$this_product->save();
+/*
 $this_product = null;
 $my_product = new WC_Product( $post_id );
 							
@@ -436,7 +533,7 @@ if (stripos($product['title'],"6th gear") !== false) {
 	$this->local_debug_log(print_r($product,true));
 	$this->local_debug_log(print_r($this_product,true));
 }
-
+*/
 
 
 							} catch (Exception $e) {
@@ -455,11 +552,6 @@ if (stripos($product['title'],"6th gear") !== false) {
 
 	private function update_woo_meta( $post_id, $name, $item, &$product_array ) {
 		if (array_key_exists($item,$product_array)) {
-/*			
-if (stripos($name,'_price') !== false) {
-	$this->local_debug_log($post_id.'|'.$name.'|'.$product_array[$item]);
-}
-*/
 			update_post_meta( $post_id, $name, $product_array[$item] );
 		}
 	}

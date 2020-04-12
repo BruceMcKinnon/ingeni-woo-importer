@@ -297,21 +297,48 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 			$this->lock_process();
 
 			do {
-				$batch = $this->get_batch();
+				try {
 
-				foreach ( $batch->data as $key => $value ) {
-					$task = $this->task( $value );
+					$batch = $this->get_batch();
 
-					if ( false !== $task ) {
-						$batch->data[ $key ] = $task;
+					if ( !is_array($batch->data) ) {
+						// If there is a malformed batch, log it to the php error log and then move on
+						error_log("wp-background-process. ERR: batch is not an array!", 0);
+
+						ob_start();                    // start buffer capture
+						var_dump( $batch->data );           // dump the values
+						$contents = ob_get_contents(); // put the buffer into a variable
+						ob_end_clean();                // end capture
+						error_log( $contents, 0 );        // log contents of the result of var_dump( $object )
+
 					} else {
-						unset( $batch->data[ $key ] );
-					}
+						//error_log("wp-background-process. batch->data: ".print_r($batch->data,true), 0);
 
-					if ( $this->time_exceeded() || $this->memory_exceeded() ) {
-						// Batch limits reached.
-						break;
+						foreach ( $batch->data as $key => $value ) {
+							$task = $this->task( $value );
+
+							if ( false !== $task ) {
+								$batch->data[ $key ] = $task;
+							} else {
+								unset( $batch->data[ $key ] );
+							}
+							if ( $this->time_exceeded() ) {
+								// Batch limits reached.
+								error_log("wp-background-process: time_exceeded", 0);
+								break;
+							}
+							if ( $this->memory_exceeded() ) {
+								// Batch limits reached.
+								error_log("wp-background-process. Task: ".print_r($batch->data[ $key ],true), 0);
+								error_log("wp-background-process: memory_exceeded", 0);
+								break;
+							}
+						}
 					}
+				
+				} catch (Exception $ex) {
+					//error_log("wp-background-process. Task: ".print_r($task,true), 0);
+					error_log("wp-background-process. ERR: ".$ex->getMessage, 0);
 				}
 
 				// Update or delete current batch.
@@ -384,7 +411,7 @@ if ( ! class_exists( 'WP_Background_Process' ) ) {
 		 * @return bool
 		 */
 		protected function time_exceeded() {
-			$finish = $this->start_time + apply_filters( $this->identifier . '_default_time_limit', 20 ); // 20 seconds
+			$finish = $this->start_time + apply_filters( $this->identifier . '_default_time_limit', 30 ); // 30 seconds
 			$return = false;
 
 			if ( time() >= $finish ) {

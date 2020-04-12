@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.07
+Version: 2020.10
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -41,7 +41,14 @@ v2020.04 - IngeniWooProductCreator() - When updating or creating a product, forc
 v2020.05 - IngeniWooProductCreator() - Use Woo Product class to set prices for regular and sale prices
 v2020.06 - IngeniWooProductCreator() - Extra error trapping
 v2020.07 - IngeniWooProductCreator() - Re-factored to utilise WC_Product in place of direct post_meta updates.
-				 
+v2020.08 - Now support the custom Woo fields for Brand and MPN - supported for SEO markup by Ingeni Woo Product Meta plugin				 
+v2020.09 - wp-background-process() - Extra error debugging and error trapping.
+				 - CreateWooProduct() - Auto 'out-of-stock' products that have sale price > than the regular price
+				 - IngeniRunWooImport() - Decrease batch sizes to 10 products each. Increase timeouts.
+v2020.10 - Now ensures all text is imported as UTF-8.
+				 - UTF-8 chars will cause problems with DB columns that only support UTF-7, but have improved error handling
+				 to ensure the import process continues.
+				 - Background batch sizes restored to 20 products per batch
 */
 
 

@@ -9,27 +9,14 @@ class IngeniWooImporter {
     public $background_import;
     public $progress;
 
-    /*
-    private function __construct() {}
-    private function __clone() {}
-    public static function getInstance() {
-        if (!IngeniWooImporter::$instance instanceof self) {
-            IngeniWooImporter::$instance = new self();
-            $this->background_import = New IngeniWooProductCreator();
-        }
-        return IngeniWooImporter::$instance;
-    }
-*/
     public function __construct() {
         $this->background_import = New IngeniWooProductCreator();
     }
-
 
     public function get_import_progress() {
         $currProgress = $this->progress;
         return $currProgress;
     }
-
 
 
     //
@@ -72,6 +59,8 @@ class IngeniWooImporter {
             $errMsg = "";
             $allowedTypes = array("csv","zip");
             $zip_path = "";
+
+            $default_brand = trim(get_option('ingeni_woo_default_brand'));
 
             
             //$this->background_import = New IngeniWooProductCreator;
@@ -126,10 +115,10 @@ class IngeniWooImporter {
             $row_idx = 0;
 
             while( !feof($fileHandle) ) {
-                set_time_limit(30);
+                set_time_limit(60);
 
                 if ( ($currRow = fgetcsv($fileHandle)) !== FALSE ) {
-                    $currRow = mb_convert_encoding($currRow, "UTF-8", "auto");
+                    $currRow = mb_convert_encoding($currRow, "UTF-8");
                     if ( ($currRow[0] == "")||($currRow[0] == NULL) ) {
                         fseek($fileHandle,0,SEEK_END);
                         $this->local_debug_log('out of here!');
@@ -145,11 +134,17 @@ class IngeniWooImporter {
                         if ($schema[$schema_idx] != '') {
                             if ( array_key_exists( $schema[$schema_idx], $product) ) {
                                 // An add-on to an existing element
-                                $product[$schema[$schema_idx]] = $product[$schema[$schema_idx]] . ',' . $currRow[$schema_idx];
+                                $product[$schema[$schema_idx]] = $product[$schema[$schema_idx]] . ',' . mb_convert_encoding($currRow[$schema_idx], "UTF-8");
                             } else {
                                 // A new element
-                                $product[$schema[$schema_idx]] = $currRow[$schema_idx];
+                                $product[$schema[$schema_idx]] =  mb_convert_encoding($currRow[$schema_idx], "UTF-8");
                             }
+                        }
+                    }
+
+                    if ( !array_key_exists('brand',$product) ) {
+                        if ($default_brand != '') {
+                            $product['brand'] = $default_brand;
                         }
                     }
                     
@@ -157,6 +152,7 @@ class IngeniWooImporter {
 //var_dump($product);
                     // Now import it
 
+                    //$product = mb_convert_encoding($product, "UTF-7", "UTF-8");
                     if ( strlen($product['sku']) > 0 ) {
                         $this->background_import->push_to_queue( array($product, $zip_path) );
                         $importCount += 1;
@@ -169,9 +165,12 @@ class IngeniWooImporter {
                 if ( (($importCount % 20) == 0) && ($importCount > 0) ) {
                     // Now all of the producsts are queued for import, start the process
                     // Do this is batches of 50 products max.
-                    $this->background_import->save()->dispatch();
+                    //$this->background_import->save()->dispatch();
+                    $this->background_import->save();
+
                     usleep(200000); // Sleep 0.2 sec
                     $this->background_import->clear_queue();
+                    set_time_limit(60);
                 }
 
 
@@ -191,7 +190,10 @@ class IngeniWooImporter {
             
             $this->local_debug_log(' in queue: '.$this->background_import->get_queue_count());
            
-            set_time_limit(30);
+            set_time_limit(60);
+
+
+
             //Close the file
             fclose($fileHandle);
 

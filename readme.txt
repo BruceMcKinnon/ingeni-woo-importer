@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: woocommerce
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2020.10
+Stable tag: 2020.12
 
 Allows Woocommerce products to be created or updated from a CSV. Uses a CSV schema file to map feilds supplied in the import CSV to WooCommerce product fields. 
 
@@ -75,3 +75,9 @@ v2020.09 - wp-background-process() - Extra error debugging and error trapping.
 v2020.10 - Now ensures all text is imported as UTF-8.
 - UTF-8 chars will cause problems with DB columns that only support UTF-7, but have improved error handling to ensure the import process continues.
 - Background batch sizes restored to 20 products per batch
+
+v2020.11 - Can now preserve the title, desc and short desc, and feature status of existing products.
+- IngeniWooProductCreator() - Fixed an error whereby original prices with currency signs were not correctly being set to float values.
+
+v2020.12 - Rev'ed to updated readme.txt
+

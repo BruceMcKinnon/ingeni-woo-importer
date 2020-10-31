@@ -140,6 +140,7 @@ function ingeni_woo_importer_plugin_options() {
 				update_option('ingeni_woo_skip_first_line', isset($_POST['ingeni_woo_skip_first_line'] ));
 				update_option('ingeni_woo_report_email', $_POST['ingeni_woo_report_email'] );
 				update_option('ingeni_woo_default_brand', $_POST['ingeni_woo_default_brand'] );
+				update_option('ingeni_woo_preserve_desc', isset($_POST['ingeni_woo_preserve_desc'] ));
 
 				echo('<div class="updated"><p>Settings saved...</p></div>');
 
@@ -153,6 +154,7 @@ function ingeni_woo_importer_plugin_options() {
 	}
 
 	$ingeni_woo_skip_first_line = get_option('ingeni_woo_skip_first_line');
+	$ingeni_woo_preserve_desc = get_option('ingeni_woo_preserve_desc');
 	$ingeni_woo_report_email = get_option('ingeni_woo_report_email');
 	$ingeni_woo_default_brand = get_option('ingeni_woo_default_brand');
 
@@ -175,6 +177,12 @@ function ingeni_woo_importer_plugin_options() {
 			$checked_value = ' checked'; 
 		}
 		echo('<tr valign="top"><td><input type="checkbox" id="ingeni_woo_skip_first_line" name="ingeni_woo_skip_first_line" '.$checked_value.' />Skip first line</td></tr>');  
+
+		$checked_value = '';
+		if ($ingeni_woo_preserve_desc) {
+			$checked_value = ' checked'; 
+		}
+		echo('<tr valign="top"><td><input type="checkbox" id="ingeni_woo_preserve_desc" name="ingeni_woo_preserve_desc" '.$checked_value.' />Preserve Titles and Descriptions</td></tr>');  
 
 		echo('<tr valign="top"><td>Email reports to:</td><td><input id="ingeni_woo_report_email" maxlength="250" size="30" name="ingeni_woo_report_email" value="'.$ingeni_woo_report_email.'" type="text" /></td></tr>');  
 

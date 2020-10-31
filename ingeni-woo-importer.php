@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.10
+Version: 2020.11
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -49,6 +49,8 @@ v2020.10 - Now ensures all text is imported as UTF-8.
 				 - UTF-8 chars will cause problems with DB columns that only support UTF-7, but have improved error handling
 				 to ensure the import process continues.
 				 - Background batch sizes restored to 20 products per batch
+v2020.11 - Can now preserve the title, desc and short desc, and feauture status of existing products.
+				 - IngeniWooProductCreator() - Fixed an error whereby original prices with currency signs were not correctly being set to float values.
 */
 
 

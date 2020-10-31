@@ -304,6 +304,8 @@ class IngeniWooProductCreator extends WP_Background_Process {
 $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],true));
 
 
+	$ingeni_woo_preserve_desc = get_option('ingeni_woo_preserve_desc');
+
 		try {
 			// Check if the product category exists
 			$prod_cat = 0;
@@ -332,6 +334,8 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 			if ( strlen(trim($product['excerpt'])) == 0 ) {
 				$product['excerpt'] = $this->get_first_sentence($product['description']);
 			}
+
+			$was_featured = 0;
 
 			if ( $prod_cat > 0 ) {
 					$post_status = "publish";
@@ -365,13 +369,28 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 							}
 					} else {
 							// Update the existing product - make sure it is published again
-							$existing_prod = array(
+
+							// Was the product feautured?
+							$old_product = wc_get_product($post_id);
+							$was_featured = $old_product->is_featured();
+
+
+							// Check to see if we are going to preserve the existing title, desc and excerpt.
+							if ( $ingeni_woo_preserve_desc ) {
+								$existing_prod = array(
+									'ID'           => $post_id,
+									'post_status' => $post_status,
+								);
+							} else {
+								$existing_prod = array(
 									'ID'           => $post_id,
 									'post_title'   => $product['title'],
 									'post_content' => $product['description'],
 									'post_excerpt' => $product['excerpt'],
 									'post_status' => $post_status,
-							);
+								);
+							}
+
 
 							// Update the post into the database
 							$update_err = "";
@@ -439,20 +458,27 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 									if ( array_key_exists('discount_class',$product) ) {
 										$discount_percent = $this->lookup_discount_percentage( $product['discount_class'] );
 
+										// Get rid of any dollare signs
+										$product['price'] = str_replace('$', '', trim($product['price']));
+
 										if ( is_numeric($discount_percent) ) {
 											// Do a straight calculation
-											$discount_amount = $product['price'] * ( $discount_percent / 100 );
-											$sale_price = $product['price'] - $discount_amount;
-//$this->local_debug_log('  disc_percent:' . $discount_percent . '  disc_amount:'.$discount_amount );											
+//$this->local_debug_log('  orig price: '.$product['price']. ' or: '. floatval( $product['price'] ).'    disc_percent:' . $discount_percent );	
+											$discount_amount = floatval( $product['price'] ) * ( $discount_percent / 100 );
+//$this->local_debug_log('  disc_amount:'.$discount_amount );			
+											$sale_price = floatval( $product['price'] ) - $discount_amount;
+//$this->local_debug_log('  calc sale_price:' . $sale_price );											
 
 										} else {
 											// Lookup another field in the product to obtain the sale price
 											// The price field is the price actually shown to the customer
 											if ( array_key_exists($discount_percent,$product) ) {
-												$sale_price = $product[ $discount_percent ];
+												$sale_price = floatval( $product[ $discount_percent ] );
 //$this->local_debug_log('  disc_col:' . $discount_percent );	
 											}
 										}
+										$sale_price = round( $sale_price,2 );
+//$this->local_debug_log('  new sale_price:' . $sale_price );	
 									}
 									
 									// The price field is the price actually shown to the customer
@@ -484,6 +510,11 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 									$this_product->set_featured( 'no' );
 									$this_product->set_manage_stock( $manage_stock );
 
+									if ( $ingeni_woo_preserve_desc ) {
+										if ($was_featured) {
+											$this_product->set_featured( 'yes' );
+										}
+									}
 
 									$this_product->set_sku( $product['sku'] );
 									$this_product->set_attributes( array() );

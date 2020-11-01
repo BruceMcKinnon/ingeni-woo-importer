@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.12
+Version: 2020.13
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -52,7 +52,8 @@ v2020.10 - Now ensures all text is imported as UTF-8.
 v2020.11 - Can now preserve the title, desc and short desc, and feature status of existing products.
 				 - IngeniWooProductCreator() - Fixed an error whereby original prices with currency signs were not correctly being set to float values.
 v2020.12 - Rev'ed to updated readme.txt
-
+v2020.13 - IngeniWooProductCreator() - Caught another instance of the currency sign stuffing things up. Added extra trap to make sure $0.00 products
+						are set to Out Of Stock.
 */
 
 

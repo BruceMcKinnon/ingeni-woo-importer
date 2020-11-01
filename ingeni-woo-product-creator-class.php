@@ -473,8 +473,10 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 											// Lookup another field in the product to obtain the sale price
 											// The price field is the price actually shown to the customer
 											if ( array_key_exists($discount_percent,$product) ) {
-												$sale_price = floatval( $product[ $discount_percent ] );
-//$this->local_debug_log('  disc_col:' . $discount_percent );	
+												$sale_price = $product[ $discount_percent ];
+//$this->local_debug_log('  disc_col:' . $discount_percent );
+												// Get rid of any dollare signs
+												$sale_price = floatval( str_replace('$', '', trim($sale_price)) );
 											}
 										}
 										$sale_price = round( $sale_price,2 );
@@ -494,7 +496,7 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 
 									// If the sale price is more than the regular price, 'make it out of stock'
 									if ( is_numeric($sale_price) ) {
-										if ( ( $sale_price > $product['price'] ) || ( $product['price'] < 0.10 ) ) {
+										if ( ( $sale_price > $product['price'] ) || ( $product['price'] < 0.10 ) || ( $sale_price == 0 ) ) {
 											$stock_status = 'outofstock';
 										}
 									}

@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: woocommerce
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2020.12
+Stable tag: 2020.14
 
 Allows Woocommerce products to be created or updated from a CSV. Uses a CSV schema file to map feilds supplied in the import CSV to WooCommerce product fields. 
 
@@ -80,4 +80,9 @@ v2020.11 - Can now preserve the title, desc and short desc, and feature status o
 - IngeniWooProductCreator() - Fixed an error whereby original prices with currency signs were not correctly being set to float values.
 
 v2020.12 - Rev'ed to updated readme.txt
+
+v2020.13 - IngeniWooProductCreator() - Caught another instance of the currency sign stuffing things up. Added extra trap to make sure $0.00 products are set to Out Of Stock.
+
+v2020.14 - IngeniWooProductCreator() - Added the getMoney() function to handle string to float currency conversions. Looks after additional currency formatting characters.
+
 

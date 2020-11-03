@@ -295,6 +295,18 @@ class IngeniWooProductCreator extends WP_Background_Process {
 	}
 
 
+	private function getMoney($money) {
+		$cleanString = preg_replace('/([^0-9\.,])/i', '', $money);
+		$onlyNumbersString = preg_replace('/([^0-9])/i', '', $money);
+
+		$separatorsCountToBeErased = strlen($cleanString) - strlen($onlyNumbersString) - 1;
+
+		$stringWithCommaOrDot = preg_replace('/([,\.])/', '', $cleanString, $separatorsCountToBeErased);
+		$removedThousandSeparator = preg_replace('/(\.|,)(?=[0-9]{3,}$)/', '',  $stringWithCommaOrDot);
+
+		return (float) str_replace(',', '.', $removedThousandSeparator);
+	}
+
 
 	private function CreateWooProduct( $product, $zip_path ) {
 			$post_id = 0;
@@ -459,14 +471,15 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 										$discount_percent = $this->lookup_discount_percentage( $product['discount_class'] );
 
 										// Get rid of any dollare signs
-										$product['price'] = str_replace('$', '', trim($product['price']));
+										//$product['price'] = str_replace('$', '', trim($product['price']));
+										$product['price'] = $this->getMoney($product['price']);
 
 										if ( is_numeric($discount_percent) ) {
 											// Do a straight calculation
-//$this->local_debug_log('  orig price: '.$product['price']. ' or: '. floatval( $product['price'] ).'    disc_percent:' . $discount_percent );	
-											$discount_amount = floatval( $product['price'] ) * ( $discount_percent / 100 );
+//$this->local_debug_log('  orig price: '.$product['price']. ' or: '. $product['price'].'    disc_percent:' . $discount_percent );	
+											$discount_amount = $product['price'] * ( $discount_percent / 100 );
 //$this->local_debug_log('  disc_amount:'.$discount_amount );			
-											$sale_price = floatval( $product['price'] ) - $discount_amount;
+											$sale_price = $product['price'] - $discount_amount;
 //$this->local_debug_log('  calc sale_price:' . $sale_price );											
 
 										} else {
@@ -476,7 +489,7 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 												$sale_price = $product[ $discount_percent ];
 //$this->local_debug_log('  disc_col:' . $discount_percent );
 												// Get rid of any dollare signs
-												$sale_price = floatval( str_replace('$', '', trim($sale_price)) );
+												$sale_price = $this->getMoney($sale_price);
 											}
 										}
 										$sale_price = round( $sale_price,2 );
@@ -485,11 +498,11 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 									
 									// The price field is the price actually shown to the customer
 									$this_product->set_sale_price( $sale_price );
-//$this->local_debug_log('  set sale price: ' . $product['sale_price']);
+//$this->local_debug_log('  set sale price: ' . $sale_price);
 
 									$this_product->set_price( $product['price'] );
 									$this_product->set_regular_price( $product['price'] );
-//$this->local_debug_log('  set price: ' . $product['price']);
+//$this->local_debug_log('  set regular price: ' . $product['price']);
 
 									//$this->update_woo_meta( $post_id, '_regular_price', 'price', $product );
 									//$this->update_woo_meta( $post_id, '_sale_price', 'sale_price', $product );

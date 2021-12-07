@@ -121,7 +121,12 @@ function ingeni_woo_importer_plugin_options() {
 					$size = $_FILES['btn_ingeniwoo_select']['size'];
 
 					$import_count = $importer->IngeniRunWooImport( $selected_file, $tmp_file, $size );
+				} else {
+					$errMsg = "No filename provided!!";
+					$import_count = -1;
 				}
+
+
 				$date_end = new DateTime();
 				$diffInSeconds = $date_end->getTimestamp() - $date_start->getTimestamp();
 
@@ -141,6 +146,8 @@ function ingeni_woo_importer_plugin_options() {
 				update_option('ingeni_woo_report_email', $_POST['ingeni_woo_report_email'] );
 				update_option('ingeni_woo_default_brand', $_POST['ingeni_woo_default_brand'] );
 				update_option('ingeni_woo_preserve_desc', isset($_POST['ingeni_woo_preserve_desc'] ));
+				update_option('ingeni_woo_draft_older_products', isset($_POST['ingeni_woo_draft_older_products'] ));
+				update_option('ingeni_woo_pending_price_ceiling', $_POST['ingeni_woo_pending_price_ceiling'] );
 
 				echo('<div class="updated"><p>Settings saved...</p></div>');
 
@@ -157,6 +164,8 @@ function ingeni_woo_importer_plugin_options() {
 	$ingeni_woo_preserve_desc = get_option('ingeni_woo_preserve_desc');
 	$ingeni_woo_report_email = get_option('ingeni_woo_report_email');
 	$ingeni_woo_default_brand = get_option('ingeni_woo_default_brand');
+	$ingeni_woo_draft_older_products = get_option('ingeni_woo_draft_older_products');
+	$ingeni_woo_pending_price_ceiling = get_option('ingeni_woo_pending_price_ceiling');
 
 	echo('<div class="wrap">');
 		echo('<form action="" method="post" enctype="multipart/form-data">'); 
@@ -183,6 +192,17 @@ function ingeni_woo_importer_plugin_options() {
 			$checked_value = ' checked'; 
 		}
 		echo('<tr valign="top"><td><input type="checkbox" id="ingeni_woo_preserve_desc" name="ingeni_woo_preserve_desc" '.$checked_value.' />Preserve Titles and Descriptions</td></tr>');  
+		
+		$checked_value = '';
+		if ($ingeni_woo_draft_older_products) {
+			$checked_value = ' checked'; 
+		}
+		echo('<tr valign="top"><td><input type="checkbox" id="ingeni_woo_draft_older_products" name="ingeni_woo_draft_older_products" '.$checked_value.' />Set older Products to Draft</td></tr>');  
+
+		if ( !is_numeric($ingeni_woo_pending_price_ceiling) ) {
+			$ingeni_woo_pending_price_ceiling = '0.00';
+		}
+		echo('<tr valign="top"><td>Set to Pending if price less or equal to:</td><td><input id="ingeni_woo_pending_price_ceiling" maxlength="50" size="10" name="ingeni_woo_pending_price_ceiling" value="'.$ingeni_woo_pending_price_ceiling.'" type="text" /></td></tr>');  
 
 		echo('<tr valign="top"><td>Email reports to:</td><td><input id="ingeni_woo_report_email" maxlength="250" size="30" name="ingeni_woo_report_email" value="'.$ingeni_woo_report_email.'" type="text" /></td></tr>');  
 

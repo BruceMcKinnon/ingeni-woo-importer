@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Woo Products Importer
-Version: 2020.14
+Version: 2020.15
 Plugin URI: https://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: https://ingeni.net
@@ -55,9 +55,14 @@ v2020.12 - Rev'ed to updated readme.txt
 v2020.13 - IngeniWooProductCreator() - Caught another instance of the currency sign stuffing things up. Added extra trap to make sure $0.00 products
 						are set to Out Of Stock.
 v2020.14 - IngeniWooProductCreator() - Added the getMoney() function to handle string to float currency conversions. Looks after additional currency formatting characters.
+
+v2020.15 - Added options to set older products to draft (previously occurred automatically).
+			- Added the 'Set Pending to Price if Less Than' option - If the sale prices is less than $x.xx, then make the product Pending so it can be reviewed manually.
+
+
+
+
 */
-
-
 
 
 function ingeni_woo_importer_extender() {

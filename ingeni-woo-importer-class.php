@@ -63,7 +63,7 @@ class IngeniWooImporter {
             $default_brand = trim(get_option('ingeni_woo_default_brand'));
 
             
-            //$this->background_import = New IngeniWooProductCreator;
+$this->background_import = New IngeniWooProductCreator;
 
 
             $this->local_debug_log("import file: ".$importFile);
@@ -93,9 +93,9 @@ class IngeniWooImporter {
             $schema_line = file( __DIR__ . '/import-schema.csv');
             // Convert to UTF-8
             $schema_line = mb_convert_encoding($schema_line, "UTF-8", "auto");
-//$this->local_debug_log('schema line: '.print_r($schema_line,true));
+$this->local_debug_log('schema line: '.print_r($schema_line,true));
             $schema = explode(',',$schema_line[0]);
-//$this->local_debug_log('exploded: '.print_r($schema,true));
+$this->local_debug_log('exploded: '.print_r($schema,true));
             $schema_count = count($schema);
 
             $importCount = 0;
@@ -123,7 +123,7 @@ class IngeniWooImporter {
                         fseek($fileHandle,0,SEEK_END);
                         $this->local_debug_log('out of here!');
                     }
-//$this->local_debug_log(print_r($currRow,true));
+$this->local_debug_log(print_r($currRow,true));
 
                     $row_idx++;
 
@@ -300,7 +300,7 @@ class IngeniWooImporter {
                     $uploadOk = 0;
                 }
             }
-            //$this->local_debug_log('A err msg:' .$uploadOk.' = '.$err_message.' = ' . $upload['url']);
+$this->local_debug_log('A err msg:' .$uploadOk.' = '.$err_message.' = ' . $upload['url']);
 
             if ( $uploadOk > 0) {
                 $path_parts = pathinfo($upload['file']);
@@ -332,7 +332,7 @@ class IngeniWooImporter {
                     }
                 }
             }
-            //$this->local_debug_log('B err msg:' .$uploadOk.' = '.$err_message.' = ' . $upload['url']);
+            $this->local_debug_log('B err msg:' .$uploadOk.' = '.$err_message.' = ' . $upload['url']);
 
         
         } catch (Exception $e) {

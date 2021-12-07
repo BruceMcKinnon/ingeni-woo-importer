@@ -38,8 +38,12 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		$msg = '';
 
 		if ( $this->is_queue_empty() ) {
-			// Mae draft anything that was not modified in the last hour
-			$this->make_unmodified_draft();
+
+			$ingeni_woo_draft_older_products = get_option('ingeni_woo_draft_older_products');
+			if ($ingeni_woo_draft_older_products) {
+				// Make draft anything that was not modified in the last hour
+				$this->make_unmodified_draft();
+			}
 
 			// Email the report
 			$msg = 'All done and complete.';
@@ -57,8 +61,8 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		}
 
 		// Set Mail Headers
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type: text/html; charset=" . get_bloginfo('charset') . "" . "\r\n";
+		$headers = "MIME-Version: 1.0" . "\r\n";
+		$headers .= "Content-type: text/html; charset=" . get_bloginfo('charset') . "" . "\r\n";
 		// Send the email
 		if ( wp_mail($ingeni_woo_report_email,'Ingeni Woo Import',$msg, $headers, $outFile) ) {
 			if ( file_exists($outFile) ) {
@@ -85,13 +89,27 @@ class IngeniWooProductCreator extends WP_Background_Process {
 		$start_time = $one_day_ago;
 
 		$table = $wpdb->prefix.'posts';
-		$update_sql = 'UPDATE ' . $table .' SET post_status = "draft" WHERE (post_type = "product") AND(post_status = "publish") AND (post_modified < "'.$start_time.'")';
-//$this->local_debug_log($update_sql);
+		//$update_sql = 'UPDATE ' . $table .' SET post_status = "draft" WHERE (post_type = "product") AND(post_status = "publish") AND (post_modified < "'.$start_time.'")';
+
+		$update_sql = $wpdb->prepare("UPDATE {$table} SET post_status = %s WHERE (post_type = %s) AND(post_status = %s) AND (post_modified < '%s');", 'draft', 'product', 'publish', $start_time );
+
+		$this->local_debug_log($update_sql);
 		$wpdb->query($update_sql);
 
-}
+	}
 
+	private function make_pending( $id ) {
+		global $wpdb;
 
+		$table = $wpdb->prefix.'posts';
+		$update_sql = 'UPDATE ' . $table .' SET post_status = "pending" WHERE (post_type = "product") AND( ID = '.$id.' )';
+//$this->local_debug_log($update_sql);
+
+		$update_sql = $wpdb->prepare("UPDATE {$table} SET post_status = %s WHERE (post_type = %s) AND( ID = %d );", 'pending', 'product', $id );
+$this->local_debug_log($update_sql);
+		$wpdb->query($update_sql);
+
+	}
 
 
 	//
@@ -316,7 +334,13 @@ class IngeniWooProductCreator extends WP_Background_Process {
 $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],true));
 
 
-	$ingeni_woo_preserve_desc = get_option('ingeni_woo_preserve_desc');
+		$ingeni_woo_preserve_desc = get_option('ingeni_woo_preserve_desc');
+		$ingeni_woo_pending_price_ceiling = get_option('ingeni_woo_pending_price_ceiling');
+		if (!is_numeric($ingeni_woo_pending_price_ceiling)) {
+			$ingeni_woo_pending_price_ceiling = 0;
+		} else {
+			$ingeni_woo_pending_price_ceiling = floatval($ingeni_woo_pending_price_ceiling);
+		}
 
 		try {
 			// Check if the product category exists
@@ -568,6 +592,15 @@ $this->local_debug_log(' CreateWooProduct working on: '.print_r($product['sku'],
 									$this_product->set_date_modified( date('Y-m-d H:i:s') );
 
 									$this_product->save();
+
+
+
+									if ( $product['price'] <= $ingeni_woo_pending_price_ceiling ) {
+										$this->local_debug_log('  pending ceiling test: ' . $product['price'] . ' <= '. $ingeni_woo_pending_price_ceiling );
+
+										$this->make_pending( $post_id );
+									}
+
 /*
 $this_product = null;
 $my_product = new WC_Product( $post_id );
